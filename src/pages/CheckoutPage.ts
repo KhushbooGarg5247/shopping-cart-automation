@@ -1,6 +1,6 @@
 import { $$ } from "@wdio/globals";
 import BasePage from "./BasePage";
-import { byTest, parseMoney } from "../utils/helpers";
+import { byTest, parseMoney, allElements, waitForStable } from "../utils/helpers";
 import { log } from "../utils/logger";
 
 export interface SummaryItem {
@@ -34,22 +34,26 @@ class CheckoutPage extends BasePage {
   }
 
   async summaryItems(): Promise<SummaryItem[]> {
-    const rows = await $$(byTest("checkout-item"));
-    return Promise.all(
-      rows.map(async (row) => {
-        const id = (await row.getAttribute("id")).replace("checkout-item-", "");
-        const qtyText = await (await row.$(byTest("checkout-item-qty"))).getText(); // "Qty: 1 × $44.99"
+    return waitForStable(async () => {
+      const rows = await allElements(byTest("checkout-item"));
+      const ids: string[] = [];
+      for (const row of rows) ids.push((await row.getAttribute("id")).replace("checkout-item-", ""));
+ 
+      const items: SummaryItem[] = [];
+      for (const id of ids) {
+        const qtyText = await this.textById(`checkout-item-qty-${id}`); // "Qty: 1 × $44.99"
         const m = qtyText.match(/Qty:\s*(\d+)\s*[×x]\s*\$([\d.,]+)/);
         if (!m) throw new Error(`Unexpected quantity text: "${qtyText}"`);
-        return {
+        items.push({
           id,
-          name: await (await row.$(byTest("checkout-item-name"))).getText(),
+          name: await this.textById(`checkout-item-name-${id}`),
           qty: Number(m[1]),
           unitPrice: parseMoney(m[2]),
-          subtotal: parseMoney(await (await row.$(byTest("checkout-item-subtotal"))).getText()),
-        };
-      })
-    );
+          subtotal: parseMoney(await this.textById(`checkout-item-subtotal-${id}`)),
+        });
+      }
+      return items;
+    });
   }
 
   shippingInfo() { return this.text("shipping-info"); }

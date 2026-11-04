@@ -31,6 +31,13 @@ export default class BasePage {
     return parseMoney(await this.text(testId));
   }
 
+  /** Some elements only carry the item number in their id (e.g. #cart-item-name-7). */
+  protected async textById(id: string): Promise<string> {
+    const element = await $(`#${id}`);
+    await element.waitForDisplayed({ timeout: TIMEOUT, timeoutMsg: `#${id} was not displayed` });
+    return (await element.getText()).trim();
+  }
+
   /** timeout 0 = instant check; otherwise wait up to `timeout` ms for it to appear. */
   protected async isShown(testId: string, timeout = 0): Promise<boolean> {
     const element = await this.el(testId);

@@ -24,9 +24,10 @@ describe("Per-account behaviour", () => {
       });
 
       it("TC-A0: a fresh login shows an empty cart and no badge", async () => {
-        expect(await ProductsPage.badgeCount()).toBe(0);
+        const badge = await ProductsPage.badgeCount();
         await ProductsPage.openCart();
-        expect(await CartPage.isEmpty()).toBe(true);
+        const cartEmpty = await CartPage.isEmpty();
+        expect({ badge, cartEmpty }).toEqual({ badge: 0, cartEmpty: true });
       });
 
       it("TC-A1: product names, prices and images match the Shopper baseline", async () => {

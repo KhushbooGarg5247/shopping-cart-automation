@@ -33,7 +33,9 @@ describe("Known defect: 'System overload' error", () => {
     const p = bySlug("bike-light");
     for (let i = 1; i <= 8; i++) {
       await ProductsPage.addToCart(p.slug);
-      expect(await ProductsPage.overloadShown()).toBe(false);
+      const shown = await ProductsPage.overloadShown();
+      if (shown) console.log(`OVERLOAD banner appeared on add #${i}`);
+      expect(shown).toBe(false);  
       await ProductsPage.openCart();
       await CartPage.remove(p.id);
       await CartPage.continueShopping();

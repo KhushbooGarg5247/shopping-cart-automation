@@ -1,4 +1,12 @@
-import { browser } from "@wdio/globals";
+import { $$, browser } from "@wdio/globals";
+
+/** `$$` returns a WebdriverIO array type; copy it into a plain array so map/Promise.all behave normally. */
+export async function allElements(selector: string): Promise<WebdriverIO.Element[]> {
+  const found = (await $$(selector)) as unknown as WebdriverIO.Element[];
+  const list: WebdriverIO.Element[] = [];
+  for (let i = 0; i < found.length; i++) list.push(found[i]);
+  return list;
+}
 
 /** Locator for the app's `data-test` attribute. */
 export const byTest = (name: string): string => `[data-test="${name}"]`;

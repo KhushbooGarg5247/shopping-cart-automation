@@ -1,112 +1,161 @@
 # Bug Reports
 
-Environment for all tickets: https://qa-task--oyettijon.replit.app, desktop Chrome.
-Practice password for all accounts: `test_sauce`.
-Automated evidence is listed per ticket; tests that assert the correct behaviour fail until the bug is fixed.
+**Application:** https://qa-task--oyettijon.replit.app (Morrow Supply practice store)
+**Browser:** Chrome 156 on macOS, desktop viewport
+**Accounts:** `fern_signal` (Shopper), `lens_warp` (Image variation), `count_echo` (Cart badge), password `test_sauce`. `quiet_lock` is the intentionally locked account and behaves correctly.
 
-| ID | Title | Severity | Accounts | Automated test |
+## Summary
+
+| ID | Title | Severity | Accounts affected | Automated test |
 |---|---|---|---|---|
-| BUG-001 | "System overload" error after repeated add/remove of the same product | High | Seen on all tested accounts | TC-B1, TC-B2, TC-B3 |
-| BUG-002 | Add to Cart shows success while the failure banner is displayed | Medium | Same as BUG-001 | (manual; see ticket) |
-| BUG-003 | Bolt T-Shirt cannot be added to the cart | High | fern_signal, lens_warp, count_echo | TC-B4 |
-| BUG-004 | Cart badge shows an item but the cart is empty after login | High | count_echo | TC-A0 |
-| BUG-005 | Sort "Price: High to Low" does not order the products correctly | Medium | fern_signal, lens_warp (check count_echo) | TC-P4, TC-A5 |
-| BUG-006 | Wrong product pictures when filtering by category | Medium | lens_warp | TC-A4, TC-A1 |
+| BUG-001 | "System overload" error on the 7th Add to Cart click for the same product | High | All tested | `overload.spec.ts` TC-B2 |
+| BUG-002 | Add to Cart shows a success state while the failure banner is displayed | Medium | Same as BUG-001 | Manual |
+| BUG-003 | Bolt T-Shirt cannot be added to the cart (cart stays empty) | High | fern_signal, lens_warp, count_echo | `defects.spec.ts` TC-B4 (x3) |
+| BUG-004 | Cart badge is one higher than the real cart contents | High | count_echo | `accounts.spec.ts` TC-A0, A2, A3 |
+| BUG-005 | "Price: High to Low" sorts in ascending order | Medium | fern_signal, lens_warp, count_echo | `products.spec.ts` TC-P4, `accounts.spec.ts` TC-A5 (x3) |
+| BUG-006 | lens_warp shows the wrong picture on every product (pictures shuffled) | Medium | lens_warp | `accounts.spec.ts` TC-A1, TC-A4 |
+
+Tests that assert the correct behaviour fail until the bug is fixed. They are expected failures.
 
 ---
 
-## BUG-001 - "System overload" error after repeated add/remove of the same product
+## BUG-001 - "System overload" error on the 7th Add to Cart click for the same product
 
-**Severity:** High  **Component:** Cart / Products
+**Severity:** High  **Priority:** High  **Component:** Products / Cart
 
 **Steps to reproduce**
-1. Log in as `fern_signal`.
-2. Add 6 units of one product (e.g. Trailmark Day Pack), then try a 7th unit.
-   Alternative path: add 4 units, open the cart, remove some, return to the store and add more.
+1. Log in as `fern_signal` with an empty cart.
+2. On the products page click Add to Cart on one product (e.g. Nightline Safety Light).
+3. Open the cart and remove that item, then return to the store.
+4. Repeat steps 2 and 3. On the 7th Add to Cart click the error appears.
+(Same result without removing: clicking Add to Cart on one product 7 times in a row.)
 
-**Expected:** Units are added. The cart holds only a few units and no limit is documented.
+**Expected result:** The item is added every time. The cart never holds more than 1 unit here, and no limit is documented.
 
-**Actual:** A red banner appears: "Error: System overload - item interaction limit exceeded for this session. Please refresh the page to continue." Other products can still be added.
+**Actual result:** A red banner appears at the top of the page: "Error: System overload - item interaction limit exceeded for this session. Please refresh the page to continue." Other products can still be added while it is showing.
+
+**Automated evidence:** `overload.spec.ts` TC-B2 (add and remove one product in a loop) fails on **add #7**. TC-B3 shows the banner after 8 Add to Cart clicks on one product while a different product still adds normally.
 
 **Notes**
-* The counter appears to be cumulative per item rather than the quantity currently in the cart: it triggers with only 4 units in the cart.
-* The wording blames the system and the session, and a refresh is not a sensible instruction for a normal purchase.
+* The limit counts Add to Cart clicks per product for the whole session, not the quantity in the cart: it triggers even though the cart is empty after each removal.
+* It counts clicks, not units: TC-B1 (stepper set to 4, one click, remove 2, stepper set to 3, one click) used only 2 clicks and did not trigger it.
+* The message blames the system and the session, and a page refresh is not a sensible instruction for a normal purchase.
 
 ---
 
 ## BUG-002 - Add to Cart shows a success state while the failure banner is displayed
 
-**Severity:** Medium  **Component:** Products
+**Severity:** Medium  **Priority:** Medium  **Component:** Products
 
 **Steps to reproduce:** As BUG-001, at the moment the banner appears.
 
-**Expected:** If adding fails, the button does not show success.
+**Expected result:** If the item is not added, the button does not show a success state.
 
-**Actual:** The Add to Cart button shows its success state while the red banner reports an error. The UI contradicts itself, so the user cannot tell whether the item was added.
+**Actual result:** The Add to Cart button shows its success state while the red banner reports an error. The UI contradicts itself, so a user cannot tell whether the item was added.
+
+**Notes:** Found by manual testing and not yet automated.
 
 ---
 
 ## BUG-003 - Bolt T-Shirt cannot be added to the cart
 
-**Severity:** High  **Component:** Products / Cart
+**Severity:** High  **Priority:** High  **Component:** Products / Cart
 
 **Steps to reproduce**
-1. Log in (reproduced with `fern_signal`, `lens_warp` and `count_echo`).
-2. On the product list find "Bolt T-Shirt" ($15.99).
+1. Log in with any working account (reproduced with `fern_signal`, `lens_warp` and `count_echo`) on a fresh session with an empty cart.
+2. Find "Bolt T-Shirt" ($15.99) on the products page.
 3. Click Add to Cart.
+4. Open the cart.
 
-**Expected:** The item is added; the cart badge increases and the item appears in the cart.
+**Expected result:** The item is added: the cart badge increases and the cart shows Bolt T-Shirt at $15.99, quantity 1.
 
-**Actual:** The item cannot be added to the cart.
+**Actual result:** Clicking Add to Cart does nothing: there is no visible change and no error message. Opening the cart afterwards shows "Your cart is empty".
 
-**Notes:** Other products add normally. Record what the button and badge do on click, and whether the quantity stepper changes anything. The similarly priced Side Quest Tee ($15.99) can be used for comparison.
+**Automated evidence:** `defects.spec.ts` TC-B4 fails for all three accounts: the cart is empty after the click.
 
----
-
-## BUG-004 - Cart badge shows an item but the cart is empty after login
-
-**Severity:** High  **Component:** Header cart badge / Cart
-
-**Steps to reproduce**
-1. Log in as `count_echo` with a new session and an empty cart.
-2. Look at the cart badge in the header.
-3. Open the cart.
-
-**Expected:** No badge is shown and the cart is empty, or the badge matches the cart contents.
-
-**Actual:** The badge shows an item, but the cart page says the cart is empty. The badge and cart disagree.
-
-**Notes:** Does not happen on `fern_signal`. Record the badge number shown.
+**Notes:** All other products add normally; the Side Quest Tee ($15.99, same price) works. The failure is silent, so a user gets no indication that the item was not added.
 
 ---
 
-## BUG-005 - Sort "Price: High to Low" does not order the products correctly
+## BUG-004 - Cart badge is one higher than the real cart contents
 
-**Severity:** Medium  **Component:** Products
+**Severity:** High  **Priority:** High  **Component:** Header cart badge
 
 **Steps to reproduce**
-1. Log in as `fern_signal` (also reproduced with `lens_warp`; check `count_echo`).
+1. Log in as `count_echo` in a new session with an empty cart.
+2. Look at the cart badge in the header, then open the cart.
+3. Return to the store, add one product, and check the badge.
+4. Open the cart and increase that item to 2 units, then check the badge.
+
+**Expected result:** No badge at login and an empty cart. After adding 1 unit the badge shows 1 (or the number of cart lines); with 2 units it matches the cart.
+
+**Actual result:**
+* Immediately after login the badge shows **1** while the cart page says "Your cart is empty".
+* After adding one product the badge never shows 1.
+* With 2 units of one product in the cart the badge shows **3**.
+The badge is consistently one higher than the real contents, as if a phantom item were counted.
+
+**Automated evidence:** `accounts.spec.ts` TC-A0 (badge 1, expected 0), TC-A2 (badge never reaches 1), TC-A3 (badge 3 with 2 units in the cart) fail for `count_echo` and pass for `fern_signal` and `lens_warp`.
+
+---
+
+## BUG-005 - "Price: High to Low" sorts in ascending order
+
+**Severity:** Medium  **Priority:** Medium  **Component:** Products
+
+**Steps to reproduce**
+1. Log in as any account.
 2. Choose "Price: High to Low" in the sort dropdown.
 
-**Expected:** Highest price first: $49.99, $44.99, $29.99, $24.99, $15.99, $15.99, $14.99, $12.99, $9.99, $8.99, $7.99, $4.99.
+**Expected result:** 49.99, 44.99, 29.99, 24.99, 15.99, 15.99, 14.99, 12.99, 9.99, 8.99, 7.99, 4.99.
 
-**Actual:** The list is not in descending price order. Record the order you see (first few prices) here.
+**Actual result:** 4.99, 7.99, 8.99, 9.99, 12.99, 14.99, 15.99, 15.99, 24.99, 29.99, 44.99, 49.99, which is the same as "Price: Low to High".
 
-**Notes:** Confirm "Price: Low to High" and the name sorts are correct.
+**Automated evidence:** `products.spec.ts` TC-P4 `price-high` and `accounts.spec.ts` TC-A5 fail on all three accounts. Name A-Z, Name Z-A and Price Low to High pass.
 
 ---
 
-## BUG-006 - Wrong product pictures when filtering by category
+## BUG-006 - lens_warp shows the wrong picture on every product
 
-**Severity:** Medium  **Component:** Products
+**Severity:** Medium  **Priority:** Medium  **Component:** Products
 
 **Steps to reproduce**
-1. Log in as `lens_warp` ("Image variation").
-2. Choose a category in the filter (list which categories are affected).
-3. Compare the pictures with the same products under `fern_signal`.
+1. Log in as `lens_warp` and look at the product list.
+2. Compare each card's picture with the product name.
+3. Choose each category in the filter (Apparel, Accessories, Gear, Books) and check again.
+4. Log in as `fern_signal` and compare the same products.
 
-**Expected:** Each product shows its own picture, identical across accounts and filters.
+**Expected result:** Every product shows its own picture, the same for every account, with and without a category filter.
 
-**Actual:** Some products show the wrong picture. Record which product shows which picture.
+**Actual result:** For `lens_warp` all 12 products show another product's picture. The 12 pictures are shuffled among the products, with none missing and none duplicated:
 
-**Notes:** Not reproduced with `fern_signal`.
+| Product on `lens_warp` | Picture shown |
+|---|---|
+| After Hours Hoodie | Daybreak Ceramic Mug |
+| Bolt T-Shirt | Nightline Safety Light |
+| Branch Point Decals | Gridline Journal |
+| Bug Hunt Crew Socks | Signal Path Field Guide |
+| Daybreak Ceramic Mug | Side Quest Tee |
+| Gridline Journal | After Hours Hoodie |
+| Little Trek Bodysuit | Summit Fleece |
+| Nightline Safety Light | Trailmark Day Pack |
+| Side Quest Tee | Little Trek Bodysuit |
+| Signal Path Field Guide | Branch Point Decals |
+| Summit Fleece | Bolt T-Shirt |
+| Trailmark Day Pack | Bug Hunt Crew Socks |
+
+The same wrong pictures appear on the unfiltered list and under every category filter. `fern_signal` and `count_echo` show the correct pictures, identical to each other.
+
+**Automated evidence:** `accounts.spec.ts` TC-A1 (all 12 images differ from the baseline) and TC-A4 (all 12 differ under each category filter) fail for `lens_warp` and pass for the other two accounts.
+
+**Impact:** A customer could buy the wrong product, because the picture does not match the name or price.
+
+---
+
+## Verified working (no defect found)
+
+* **Login:** all four accounts, the practice-account buttons, wrong password, unknown user, empty credentials, show/hide password, logout, and the locked-out message for `quiet_lock` (13 of 13 tests).
+* **Cart:** empty state, Continue Shopping, names, unit prices, quantities and line totals, (+) and (-), remove, singular/plural title, and subtotal + 8% tax = total across 5 pricing scenarios (12 of 12).
+* **Checkout:** order preview, order summary items and totals, shipping details, order confirmation, cart emptied afterwards, empty shipping form blocked, back navigation (8 of 8).
+* **Products:** total count (12), all category filters (5 Apparel, 4 Accessories, 2 Gear, 1 Books), and the sorts Name A-Z, Name Z-A and Price Low to High.
+* **Mobile (390x844 emulation):** login, filter, price sort, cart totals and a full checkout all passed.

@@ -1,6 +1,6 @@
 import { $, $$, browser } from "@wdio/globals";
 import BasePage from "./BasePage";
-import { byTest, parseMoney, waitForStable } from "../utils/helpers";
+import { byTest, parseMoney, waitForStable, allElements } from "../utils/helpers";
 import { log } from "../utils/logger";
 
 export interface CartLine {
@@ -31,13 +31,14 @@ class CartPage extends BasePage {
     return (await $$(byTest("cart-item"))).length;
   }
 
-  async itemIds(): Promise<string[]> {
-    const rows = await $$(byTest("cart-item"));
+    async itemIds(): Promise<string[]> {
+    const rows = await allElements(byTest("cart-item"));
     return Promise.all(rows.map(async (r) => (await r.getAttribute("id")).replace("cart-item-", "")));
   }
 
   quantity(id: string)  { return this.text(`quantity-item-${id}`).then(Number); }
-  unitPrice(id: string) { return this.text(`cart-item-price-${id}`).then(parseMoney); }
+  name(id: string)      { return this.textById(`cart-item-name-${id}`); }
+  unitPrice(id: string) { return this.textById(`cart-item-price-${id}`).then(parseMoney); }
   lineTotal(id: string) { return this.money(`cart-item-total-${id}`); }
 
   async lines(): Promise<CartLine[]> {
@@ -46,7 +47,7 @@ class CartPage extends BasePage {
       return Promise.all(
         ids.map(async (id) => ({
           id,
-          name: await this.text(`cart-item-name-${id}`),
+          name: await this.name(id),
           unitPrice: await this.unitPrice(id),
           qty: await this.quantity(id),
           lineTotal: await this.lineTotal(id),

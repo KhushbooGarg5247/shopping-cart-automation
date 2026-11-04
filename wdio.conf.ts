@@ -52,7 +52,7 @@ export const config: WebdriverIO.Config = {
 
   framework: "mocha",
   // Re-run a whole spec file once if it fails (guards against one-off environment flakiness)
-  specFileRetries: 1,
+  specFileRetries: 0,
   specFileRetriesDelay: 2,
   reporters: ["spec"],
   mochaOpts: { ui: "bdd", timeout: 60000 },

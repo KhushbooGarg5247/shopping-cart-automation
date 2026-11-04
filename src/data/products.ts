@@ -21,10 +21,10 @@ export const PRODUCTS: Product[] = [
   { id: "6",  slug: "all-the-things-t-shirt", name: "Side Quest Tee",          price: 15.99, category: "apparel" },
   { id: "7",  slug: "sauce-labs-mug",         name: "Daybreak Ceramic Mug",    price: 14.99, category: "accessories" },
   { id: "8",  slug: "sauce-labs-hoodie",      name: "After Hours Hoodie",      price: 44.99, category: "apparel" },
-  { id: "9",  slug: "lab-notebook",           name: "Gridline Journal",        price: 12.99, category: "books" },
+  { id: "9",  slug: "lab-notebook",           name: "Gridline Journal",        price: 12.99, category: "accessories" },
   { id: "10", slug: "qa-sticker-pack",        name: "Branch Point Decals",     price: 4.99,  category: "accessories" },
   { id: "11", slug: "automation-handbook",    name: "Signal Path Field Guide", price: 24.99, category: "books" },
-  { id: "12", slug: "debug-socks",            name: "Bug Hunt Crew Socks",     price: 8.99,  category: "apparel" },
+  { id: "12", slug: "debug-socks",            name: "Bug Hunt Crew Socks",     price: 8.99,  category: "accessories" },
 ];
 
 export const TOTAL_ITEMS = PRODUCTS.length;
