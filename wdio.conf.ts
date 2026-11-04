@@ -1,6 +1,10 @@
 import { mkdirSync } from "node:fs";
 import { browser } from "@wdio/globals";
 
+const driverOptions = process.env.CHROMEDRIVER_PATH
+  ? { "wdio:chromedriverOptions": { binary: process.env.CHROMEDRIVER_PATH } }
+  : {};
+
 const MOBILE_SPEC = "./src/specs/mobile.spec.ts";
 
 export const config: WebdriverIO.Config = {
@@ -19,12 +23,14 @@ export const config: WebdriverIO.Config = {
   capabilities: [
     {
       // Desktop run: everything except the mobile spec
+      ...driverOptions,
       browserName: "chrome",
       "wdio:exclude": [MOBILE_SPEC],
       "goog:chromeOptions": { args: ["--window-size=1366,900"] },
     },
     {
       // Mobile run: only the mobile spec, using Chrome's device emulation (390x844 @3x)
+      ...driverOptions,
       browserName: "chrome",
       "wdio:specs": [MOBILE_SPEC],
       "goog:chromeOptions": {
